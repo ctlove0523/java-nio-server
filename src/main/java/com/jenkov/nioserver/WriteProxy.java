@@ -3,24 +3,24 @@ package com.jenkov.nioserver;
 import java.util.Queue;
 
 /**
- * Created by jjenkov on 22-10-2015.
+ * @author Created by jjenkov on 22-10-2015.
  */
 public class WriteProxy {
 
-    private MessageBuffer messageBuffer = null;
-    private Queue        writeQueue     = null;
+    private MessageBuffer messageBuffer;
+    private Queue<Message> writeQueue;
 
-    public WriteProxy(MessageBuffer messageBuffer, Queue writeQueue) {
+    WriteProxy(MessageBuffer messageBuffer, Queue<Message> writeQueue) {
         this.messageBuffer = messageBuffer;
         this.writeQueue = writeQueue;
     }
 
-    public Message getMessage(){
+    public Message getMessage() {
         return this.messageBuffer.getMessage();
     }
 
-    public boolean enqueue(Message message){
-        return this.writeQueue.offer(message);
+    public void enqueue(Message message) {
+        this.writeQueue.offer(message);
     }
 
 }

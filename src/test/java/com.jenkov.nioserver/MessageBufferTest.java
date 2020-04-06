@@ -2,11 +2,7 @@ package com.jenkov.nioserver;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.*;
 
 /**
  * Created by jjenkov on 18-10-2015.
@@ -21,16 +17,16 @@ public class MessageBufferTest {
         Message message = messageBuffer.getMessage();
 
         assertNotNull(message);
-        assertEquals(0       , message.offset);
-        assertEquals(0       , message.length);
-        assertEquals(4 * 1024, message.capacity);
+        assertEquals(0       , message.getOffset());
+        assertEquals(0       , message.getLength());
+        assertEquals(4 * 1024, message.getCapacity());
 
         Message message2 = messageBuffer.getMessage();
 
         assertNotNull(message2);
-        assertEquals(4096    , message2.offset);
-        assertEquals(0       , message2.length);
-        assertEquals(4 * 1024, message2.capacity);
+        assertEquals(4096    , message2.getOffset());
+        assertEquals(0       , message2.getLength());
+        assertEquals(4 * 1024, message2.getCapacity());
 
         //todo test what happens if the small buffer space is depleted of messages.
 
@@ -43,36 +39,36 @@ public class MessageBufferTest {
 
         Message message = messageBuffer.getMessage();
 
-        byte[] smallSharedArray = message.sharedArray;
+        byte[] smallSharedArray = message.getSharedArray();
 
         assertNotNull(message);
-        assertEquals(0       , message.offset);
-        assertEquals(0       , message.length);
-        assertEquals(4 * 1024, message.capacity);
+        assertEquals(0       , message.getOffset());
+        assertEquals(0       , message.getLength());
+        assertEquals(4 * 1024, message.getCapacity());
 
         messageBuffer.expandMessage(message);
-        assertEquals(0         , message.offset);
-        assertEquals(0         , message.length);
-        assertEquals(128 * 1024, message.capacity);
+        assertEquals(0         , message.getOffset());
+        assertEquals(0         , message.getLength());
+        assertEquals(128 * 1024, message.getCapacity());
 
-        byte[] mediumSharedArray = message.sharedArray;
+        byte[] mediumSharedArray = message.getSharedArray();
         assertNotSame(smallSharedArray, mediumSharedArray);
 
         messageBuffer.expandMessage(message);
-        assertEquals(0          , message.offset);
-        assertEquals(0          , message.length);
-        assertEquals(1024 * 1024, message.capacity);
+        assertEquals(0          , message.getOffset());
+        assertEquals(0          , message.getLength());
+        assertEquals(1024 * 1024, message.getCapacity());
 
-        byte[] largeSharedArray = message.sharedArray;
+        byte[] largeSharedArray = message.getSharedArray();
         assertNotSame(smallSharedArray, largeSharedArray);
         assertNotSame(mediumSharedArray, largeSharedArray);
 
         //next expansion should not be possible.
         assertFalse(messageBuffer.expandMessage(message));
-        assertEquals(0          , message.offset);
-        assertEquals(0          , message.length);
-        assertEquals(1024 * 1024, message.capacity);
-        assertSame(message.sharedArray, largeSharedArray);
+        assertEquals(0          , message.getOffset());
+        assertEquals(0          , message.getLength());
+        assertEquals(1024 * 1024, message.getCapacity());
+        assertSame(message.getSharedArray(), largeSharedArray);
 
 
 

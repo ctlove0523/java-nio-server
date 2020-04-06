@@ -1,11 +1,15 @@
 package com.jenkov.nioserver;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 /**
@@ -15,20 +19,23 @@ public class SelectorTest {
 
     @Test
     public void test() throws IOException {
+        ServerSocketChannel server = ServerSocketChannel.open();
+        SocketAddress address = new InetSocketAddress("localhost",5230);
+        server.bind(address);
+
         Selector selector = Selector.open();
 
         SocketChannel socketChannel = SocketChannel.open();
-        socketChannel.bind(new InetSocketAddress("localhost", 9999));
+        socketChannel.connect(address);
 
         socketChannel.configureBlocking(false);
 
-        SelectionKey key1 = socketChannel.register(selector, SelectionKey.OP_WRITE);
-        key1.cancel();
+        socketChannel.register(selector, SelectionKey.OP_WRITE);
+        ByteBuffer buffer = ByteBuffer.allocate(12);
+        buffer.put("test".getBytes());
+        socketChannel.write(buffer);
 
-        SelectionKey key2 = socketChannel.register(selector, SelectionKey.OP_WRITE);
-        key2.cancel();
-
-
+        selector.selectedKeys().forEach(selectionKey -> Assert.assertTrue(selectionKey.isWritable()));
 
     }
 

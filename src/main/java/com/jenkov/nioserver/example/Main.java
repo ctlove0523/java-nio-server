@@ -1,11 +1,11 @@
 package com.jenkov.nioserver.example;
 
-import com.jenkov.nioserver.*;
+import com.jenkov.nioserver.IMessageProcessor;
+import com.jenkov.nioserver.Message;
+import com.jenkov.nioserver.Server;
 import com.jenkov.nioserver.http.HttpMessageReaderFactory;
 
 import java.io.IOException;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 /**
  * Created by jjenkov on 19-10-2015.
@@ -23,10 +23,10 @@ public class Main {
         byte[] httpResponseBytes = httpResponse.getBytes("UTF-8");
 
         IMessageProcessor messageProcessor = (request, writeProxy) -> {
-            System.out.println("Message Received from socket: " + request.socketId);
+            System.out.println("Message Received from socket: " + request.getSocketId());
 
             Message response = writeProxy.getMessage();
-            response.socketId = request.socketId;
+            response.setSocketId(request.getSocketId());
             response.writeToMessage(httpResponseBytes);
 
             writeProxy.enqueue(response);

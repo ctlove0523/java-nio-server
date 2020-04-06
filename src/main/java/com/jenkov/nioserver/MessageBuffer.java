@@ -4,40 +4,36 @@ package com.jenkov.nioserver;
  * A shared buffer which can contain many messages inside. A message gets a section of the buffer to use. If the
  * message outgrows the section in size, the message requests a larger section and the message is copied to that
  * larger section. The smaller section is then freed again.
- *
- *
+ * <p>
+ * <p>
  * Created by jjenkov on 18-10-2015.
  */
 public class MessageBuffer {
 
-    public static int KB = 1024;
-    public static int MB = 1024 * KB;
+    private static int KB = 1024;
+    private static int MB = 1024 * KB;
 
-    private static final int CAPACITY_SMALL  =   4  * KB;
-    private static final int CAPACITY_MEDIUM = 128  * KB;
-    private static final int CAPACITY_LARGE  = 1024 * KB;
+    private static final int CAPACITY_SMALL = 4 * KB;
+    private static final int CAPACITY_MEDIUM = 128 * KB;
+    private static final int CAPACITY_LARGE = 1024 * KB;
 
-    //package scope (default) - so they can be accessed from unit tests.
-    byte[]  smallMessageBuffer  = new byte[1024 *   4 * KB];   //1024 x   4KB messages =  4MB.
-    byte[]  mediumMessageBuffer = new byte[128  * 128 * KB];   // 128 x 128KB messages = 16MB.
-    byte[]  largeMessageBuffer  = new byte[16   *   1 * MB];   //  16 *   1MB messages = 16MB.
+    byte[] smallMessageBuffer = new byte[1024 * 4 * KB];
+    byte[] mediumMessageBuffer = new byte[128 * 128 * KB];
+    byte[] largeMessageBuffer = new byte[16 * MB];
 
-    QueueIntFlip smallMessageBufferFreeBlocks  = new QueueIntFlip(1024); // 1024 free sections
-    QueueIntFlip mediumMessageBufferFreeBlocks = new QueueIntFlip(128);  // 128  free sections
-    QueueIntFlip largeMessageBufferFreeBlocks  = new QueueIntFlip(16);   // 16   free sections
-
-    //todo make all message buffer capacities and block sizes configurable
-    //todo calculate free block queue sizes based on capacity and block size of buffers.
+    private QueueIntFlip smallMessageBufferFreeBlocks = new QueueIntFlip(1024);
+    private QueueIntFlip mediumMessageBufferFreeBlocks = new QueueIntFlip(128);
+    private QueueIntFlip largeMessageBufferFreeBlocks = new QueueIntFlip(16);
 
     public MessageBuffer() {
         //add all free sections to all free section queues.
-        for(int i=0; i<smallMessageBuffer.length; i+= CAPACITY_SMALL){
+        for (int i = 0; i < smallMessageBuffer.length; i += CAPACITY_SMALL) {
             this.smallMessageBufferFreeBlocks.put(i);
         }
-        for(int i=0; i<mediumMessageBuffer.length; i+= CAPACITY_MEDIUM){
+        for (int i = 0; i < mediumMessageBuffer.length; i += CAPACITY_MEDIUM) {
             this.mediumMessageBufferFreeBlocks.put(i);
         }
-        for(int i=0; i<largeMessageBuffer.length; i+= CAPACITY_LARGE){
+        for (int i = 0; i < largeMessageBuffer.length; i += CAPACITY_LARGE) {
             this.largeMessageBufferFreeBlocks.put(i);
         }
     }
@@ -45,22 +41,23 @@ public class MessageBuffer {
     public Message getMessage() {
         int nextFreeSmallBlock = this.smallMessageBufferFreeBlocks.take();
 
-        if(nextFreeSmallBlock == -1) return null;
+        if (nextFreeSmallBlock == -1) {
+            return null;
+        }
 
-        Message message = new Message(this);       //todo get from Message pool - caps memory usage.
-
-        message.sharedArray = this.smallMessageBuffer;
-        message.capacity    = CAPACITY_SMALL;
-        message.offset      = nextFreeSmallBlock;
-        message.length      = 0;
+        Message message = new Message(this);
+        message.setSharedArray(this.smallMessageBuffer);
+        message.setCapacity(CAPACITY_SMALL);
+        message.setOffset(nextFreeSmallBlock);
+        message.setLength(0);
 
         return message;
     }
 
-    public boolean expandMessage(Message message){
-        if(message.capacity == CAPACITY_SMALL){
+    public boolean expandMessage(Message message) {
+        if (message.getCapacity() == CAPACITY_SMALL) {
             return moveMessage(message, this.smallMessageBufferFreeBlocks, this.mediumMessageBufferFreeBlocks, this.mediumMessageBuffer, CAPACITY_MEDIUM);
-        } else if(message.capacity == CAPACITY_MEDIUM){
+        } else if (message.getCapacity() == CAPACITY_MEDIUM) {
             return moveMessage(message, this.mediumMessageBufferFreeBlocks, this.largeMessageBufferFreeBlocks, this.largeMessageBuffer, CAPACITY_LARGE);
         } else {
             return false;
@@ -69,20 +66,19 @@ public class MessageBuffer {
 
     private boolean moveMessage(Message message, QueueIntFlip srcBlockQueue, QueueIntFlip destBlockQueue, byte[] dest, int newCapacity) {
         int nextFreeBlock = destBlockQueue.take();
-        if(nextFreeBlock == -1) return false;
+        if (nextFreeBlock == -1) {
+            return false;
+        }
 
-        System.arraycopy(message.sharedArray, message.offset, dest, nextFreeBlock, message.length);
+        System.arraycopy(message.getSharedArray(), message.getOffset(), dest, nextFreeBlock, message.getLength());
 
-        srcBlockQueue.put(message.offset); //free smaller block after copy
+        srcBlockQueue.put(message.getOffset());
 
-        message.sharedArray = dest;
-        message.offset      = nextFreeBlock;
-        message.capacity    = newCapacity;
+        message.setSharedArray(dest);
+        message.setOffset(nextFreeBlock);
+        message.setCapacity(newCapacity);
         return true;
     }
-
-
-
 
 
 }
